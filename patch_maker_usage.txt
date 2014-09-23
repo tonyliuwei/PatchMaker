@@ -1,0 +1,132 @@
+使用方法：
+-----
+*0. 用到的命令
+ patch_maker_usage - 打印使用方法
+ patch_maker_make_patch - 生成补丁
+ patch_maker_gen_do_patch - 手动生成补丁脚本
+ 
+ python do_patch.py [dest_dir] - 打补丁操作
+ 
+ 一个配置文件
+ patch_maker_config.py
+ 
+ 每个命令后面会详细介绍
+ 
+-----
+*1. 一共涉及3个目录
+  基线目录 - 原始sdk的一个展开
+  工作目录 - 当前工作目录。确保编译、测试没问题
+  
+  补丁目录 - 生成的补丁存放的目录
+  
+-----  
+*2. 在工作目录下创建 VERSION_CONTROL.txt
+    里面只有一行内容，
+    Trunk
+     或是
+    Tags 1.00.00
+    
+    注意Tags后有空格
+
+    
+-----    
+*3. release_notes.txt
+ 在工作目录下要有release_notes.txt
+ release_notes记录版本信息，生成的补丁如果是Tag，生成工具会在VERSION_CONTROL.txt中寻找相应的Tag名的修改记录。
+ 要求的格式为：
+ [Tags 1.00.00]
+ xxx
+
+ 必须写好修改记录，不然无法通过生成补丁前的检查。 
+
+----- 
+*4. 建一个存放补丁的目录，在其下创建 patch_maker_config.py  参考内容
+
+    #patch_maker_config.py
+    PROJECT_NAME = "OTT"
+    baseline_dir = "/home/lwei/lwei/projects/OTT/AmlogicMX_SDK_org"
+    working_dir = "/home/lwei/lwei/projects/OTT/AmlogicMX_SDK_work"
+
+ 里面填写好对应项目的，
+ 2个目录的绝对路径
+ baseline_dir 基线目录
+ working_dir 工作目录
+ 
+----- 
+*5. patch_maker_make_patch
+ 在patch目录下打:
+  patch_maker_make_patch
+  就可以创建补丁了。创建出的补丁在当前目录下的 patch目录下
+  创建出补丁的位置由工作目录根目录下得 VERSION_CONTROL.txt 来决定
+  分别会创建到Trunk下或Tags下
+  
+  一个sdk通常有35万个左右文件+目录。第一次创建需要20分钟左右。请耐心等待。以后每次生成补丁在5分钟之内。
+  
+  一个补丁目录包含2个子目录，add 和 remove
+  一个执行脚本 do_patch.py
+  
+  add目录下是新增和修改的文件
+  remove目录下是删除和修改文件的原始版本
+ 
+ 此命令会先生成2个目录的数据库文件，再根据VERSION_CONTROL.txt生成补丁 
+ 
+-----  
+*6. 使用补丁。到补丁目录，有do_patch.py的目录下打
+ 
+ python do_patch.py 目标目录
+ 
+ 就可以打上补丁了
+ 目标目录为原始sdk的拷贝。注意不要错补到之前的基线目录。
+ 
+----- 
+*7. 标准版更新了，如何合并2个补丁?
+ 建一个合并补丁的目录，里面放把标准版和工作版的2个补丁，用diff工具比较，手动合并标准版补丁到工作版补丁上。
+ 合并后在补丁目录下打 
+ 
+ gen_do_script
+ 
+ 会根据当前的add/remove目录的内容重新生成一个 do_patch.py
+ 
+ 将新补丁打到原始sdk上，在编译、调试成功后再重新生成补丁即可
+ 
+-----
+*8. 如何知道地方版是从哪个标准版继承的？
+  标准版的 VERSION_CONTROL.txt的内容见 2.
+  地方版的 VERSION_CONTROL.txt的内容为：
+   Trunk
+    或
+   Tags 1.00.01_1.02.03
+   
+   分为2段，下划线_之前的就是继承自哪个标准版的版本号，之后是自己的版本号
+   
+   同样，地方版的release_notes.txt也使用同样的方法写。例如：
+   
+   [Tags 1.00.01_1.02.03]
+     xxxx
+     
+   [Tags 1.00.01_1.02.01]
+     yyyy
+   
+   这样一旦标准版升级了，release_notes.txt就变为
+   [Tags 1.00.20_1.03.01]
+     blablabla
+     
+   [Tags 1.00.01_1.02.03]
+     xxxx
+     
+   [Tags 1.00.01_1.02.01]
+     yyyy   
+     
+   这样每一个地方版的Tag都能找到对应的标准版的Tag
+   
+-----
+*9. 如果是从另一个地方版继承的怎么办？
+ Tag的命名继续往后加
+   Tags 1.00.01_1.02.03_1.00.01
+ 
+ 在release_notes里写明自己是从哪个项目的哪个版本继承的即可。
+ 
+ 规则就是继承的Tag版本号信息都保留，自己的tag信息在最后一段。
+ 如果没有继承，那就只有一段版本号
+
+
